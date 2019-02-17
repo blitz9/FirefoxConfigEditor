@@ -156,7 +156,7 @@ namespace FirefoxConfigEditor
                                                where path.IndexOf("Path") > -1
                                                select path.IndexOf("Path=Profiles") > -1 ?
                                                path.Replace("Path=Profiles/", defaultPath) :
-                                               path.Replace("Path =", "");
+                                               path.Replace("Path=", "");
 
             foreach (string path in profilePaths)
             {
