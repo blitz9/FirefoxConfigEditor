@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace FirefoxConfigEditor
@@ -27,14 +25,9 @@ namespace FirefoxConfigEditor
             ParameterType = type;
         }
 
-        private string name;
-        private string value;
-        private ParamType type;
-
-        public string Name
-        { get => name; set => name = value; }
-        public string Value { get => value; set => this.value = value; }
-        public ParamType ParameterType { get => type; set => type = value; }
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public ParamType ParameterType { get; set; }
 
         public string ParamToString()
         {
@@ -133,9 +126,20 @@ namespace FirefoxConfigEditor
 
             //load new rules
             string ruleFilePath = "rules.txt";
+
+            if (args.Length > 0)
+            {
+                if (args.Length > 1)
+                {
+                    Console.WriteLine("incorrect number of parameters");
+                    return;
+                }
+                ruleFilePath = args[0];
+            }
+
             var rules = LoadRules(charSeparators, ruleFilePath);
 
-            if (rules.AddedParams.Count==0 && rules.DeletedParams.Count == 0)
+            if (rules.AddedParams.Count == 0 && rules.DeletedParams.Count == 0)
             {
                 return;
             }
@@ -156,11 +160,11 @@ namespace FirefoxConfigEditor
 
             foreach (string path in profilePaths)
             {
-                var parameters = ReadAllFromFile(charSeparators,path.TrimEnd(new char[] {'\r'}) + @"\prefs.js");
+                var parameters = ReadAllFromFile(charSeparators, path.TrimEnd(new char[] { '\r' }) + @"\prefs.js");
 
                 foreach (var rule in rules.AddedParams)
                 {
-                    parameters.Insert(parameters.Count,rule.ParamToString() + '\r');
+                    parameters.Insert(parameters.Count, rule.ParamToString() + '\r');
                 }
 
                 foreach (var rule in rules.DeletedParams)
@@ -168,7 +172,7 @@ namespace FirefoxConfigEditor
                     parameters.Remove(rule.ParamToString() + '\r');
                 }
 
-                WriteInFile(path.TrimEnd(new char[] { '\r' }) + @"\prefs.js",parameters);
+                WriteInFile(path.TrimEnd(new char[] { '\r' }) + @"\prefs.js", parameters);
             }
         }
     }
