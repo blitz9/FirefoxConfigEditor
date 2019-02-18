@@ -60,6 +60,11 @@ namespace FirefoxConfigEditor
 
     class Program
     {
+        private static bool IsString(String s1,string s2)
+        {
+            return s1==s2;
+        }
+
         static List<string> ReadAllFromFile(char[] charSeparators, string path)
         {
             List<string> stringsFromFile = new List<string>();
@@ -169,7 +174,7 @@ namespace FirefoxConfigEditor
 
                 foreach (var rule in rules.DeletedParams)
                 {
-                    parameters.Remove(rule.ParamToString() + '\r');
+                    parameters.RemoveAll(param => param == rule.ParamToString() + '\r');
                 }
 
                 WriteInFile(path.TrimEnd(new char[] { '\r' }) + @"\prefs.js", parameters);
