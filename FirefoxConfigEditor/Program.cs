@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 
 namespace FirefoxConfigEditor
 {
-    sealed class Parameter
+    internal sealed class Parameter
     {
         public enum ParamType
         {
@@ -13,13 +13,11 @@ namespace FirefoxConfigEditor
             add,
             unknow
         }
-        Parameter() { }
+
+        private Parameter() { }
 
         public Parameter(string name, string value, ParamType type)
         {
-            Name = name;
-            Value = value;
-            ParameterType = type;
             Name = name;
             Value = value;
             ParameterType = type;
@@ -29,40 +27,40 @@ namespace FirefoxConfigEditor
         public string Value { get; set; }
         public ParamType ParameterType { get; set; }
 
-        public string ParamToString()
-        {
-            return $"user_pref({Name},{Value});";
-        }
+        public string ParamToString() => $"user_pref({Name},{Value});";
 
-        public static implicit operator Parameter(string param)
+        public static explicit operator Parameter(string param)
         {
             ParamType type;
 
             switch (param[0])
             {
                 case '+':
-                    type = ParamType.add;
-                    break;
+                type = ParamType.add;
+                break;
                 case '-':
-                    type = ParamType.delete;
-                    break;
+                type = ParamType.delete;
+                break;
                 default:
-                    type = ParamType.unknow;
-                    break;
+                type = ParamType.unknow;
+                break;
             }
 
-            string name = param.Substring(param.IndexOf('(') + 1, param.IndexOf(',') - param.IndexOf('(') - 1);
-            string value = param.Substring(param.IndexOf(',') + 1, param.IndexOf(')') - param.IndexOf(',') - 1);
+            var name = param.Substring(param.IndexOf('(') + 1,
+                                       param.IndexOf(',') - param.IndexOf('(') - 1);
+
+            var value = param.Substring(param.IndexOf(',') + 1,
+                                        param.IndexOf(')') - param.IndexOf(',') - 1);
 
             return new Parameter(name, value, type);
         }
     }
 
-    class Program
+    internal class Program
     {
-        static List<string> ReadAllFromFile(char[] charSeparators, string path)
+        private static List<string> ReadAllFromFile(char[] charSeparators, string path)
         {
-            List<string> stringsFromFile = new List<string>();
+            var stringsFromFile = new List<string>();
 
             if (!File.Exists(path))
             {
@@ -70,62 +68,63 @@ namespace FirefoxConfigEditor
                 return stringsFromFile;
             }
 
-            using (FileStream fstream = File.OpenRead(path))
+            using (var fstream = File.OpenRead(path))
             {
-                byte[] info = new byte[fstream.Length];
+                var info = new byte[fstream.Length];
                 fstream.Read(info, 0, info.Length);
-                string textFromFile = System.Text.Encoding.Default.GetString(info);
-                stringsFromFile = textFromFile.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries).ToList<string>();
+                var textFromFile = System.Text.Encoding.Default.GetString(info);
+                stringsFromFile = textFromFile.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries).ToList();
             }
 
             return stringsFromFile;
         }
 
-        static void WriteInFile(string path, List<string> writingStrings)
+        private static void WriteInFile(string path, List<string> listString)
         {
-            using (FileStream fstream = new FileStream(path, FileMode.Create))
+            using (var fstream = new FileStream(path, FileMode.Create))
             {
-                string writingString = "";
+                var writingString = "";
 
-                foreach (string str in writingStrings)
+                foreach (var str in listString)
                 {
-                    writingString = writingString + str + '\n';
+                    writingString += str + '\n';
                 }
-                // запись массива байтов в файл
-                byte[] array = System.Text.Encoding.Default.GetBytes(writingString);
+
+                var array = System.Text.Encoding.Default.GetBytes(writingString);
                 fstream.Write(array, 0, array.Length);
             }
         }
 
-        static (List<Parameter> AddedParams, List<Parameter> DeletedParams) LoadRules(char[] charSeparators, string path)
+        private static (List<Parameter> AddedParams, List<Parameter> DeletedParams) LoadRules(char[] charSeparators, string path)
         {
 
-            List<Parameter> addParams = new List<Parameter>();
-            List<Parameter> deleteParams = new List<Parameter>();
-            List<string> rules = ReadAllFromFile(charSeparators, path);
-            foreach (string strParam in rules)
+            var addParams = new List<Parameter>();
+            var deleteParams = new List<Parameter>();
+            var rules = ReadAllFromFile(charSeparators, path);
+
+            foreach (var strParam in rules)
             {
-                Parameter newParameter = strParam;
+                var newParameter = (Parameter) strParam;
                 switch (newParameter.ParameterType)
                 {
                     case Parameter.ParamType.delete:
-                        deleteParams.Add(newParameter);
-                        break;
+                    deleteParams.Add(newParameter);
+                    break;
                     case Parameter.ParamType.add:
-                        addParams.Add(newParameter);
-                        break;
+                    addParams.Add(newParameter);
+                    break;
                 }
             }
 
             return (addParams, deleteParams);
         }
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             char[] charSeparators = { '\n' };
 
             //load new rules
-            string ruleFilePath = "rules.txt";
+            var ruleFilePath = "rules.txt";
 
             if (args.Length > 0)
             {
@@ -144,21 +143,21 @@ namespace FirefoxConfigEditor
                 return;
             }
 
-            string profileManagerFile = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+            var profileManagerFile = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
                 @"\Mozilla\Firefox\profiles.ini";
 
-            List<string> stringsFromFile = ReadAllFromFile(charSeparators, profileManagerFile);
+            var infoAboutProfiles = ReadAllFromFile(charSeparators, profileManagerFile);
 
-            string defaultPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
+            var defaultPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) +
                 @"\Mozilla\Firefox\Profiles\";
 
-            IEnumerable<string> profilePaths = from path in stringsFromFile
-                                               where path.IndexOf("Path") > -1
-                                               select path.IndexOf("Path=Profiles") > -1 ?
-                                               path.Replace("Path=Profiles/", defaultPath) :
-                                               path.Replace("Path=", "");
+            var profilePaths = from path in infoAboutProfiles
+                               where path.IndexOf("Path") > -1
+                               select path.IndexOf("Path=Profiles") > -1 ?
+                               path.Replace("Path=Profiles/", defaultPath) :
+                               path.Replace("Path=", "");
 
-            foreach (string path in profilePaths)
+            foreach (var path in profilePaths)
             {
                 try
                 {
