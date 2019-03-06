@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace FirefoxConfigEditor
 {
@@ -83,14 +84,14 @@ namespace FirefoxConfigEditor
         {
             using (var fstream = new FileStream(path, FileMode.Create))
             {
-                var writingString = "";
+                var writingString = new StringBuilder();
 
                 foreach (var str in listString)
                 {
-                    writingString += str + '\n';
+                    writingString.Append(str + '\n');
                 }
 
-                var array = System.Text.Encoding.Default.GetBytes(writingString);
+                var array = System.Text.Encoding.Default.GetBytes(writingString.ToString());
                 fstream.Write(array, 0, array.Length);
             }
         }
